@@ -33,20 +33,21 @@ regd_users.post("/login", (req,res) => {
   const password = req.body.password;
 
   if (!username || !password) {
-      return res.status(404).json({message: "Error logging in"});
+      return res.status(400).json({message: "Username and password are required"});
   }
 
   if (authenticatedUser(username,password)) {
+    // The token carries the username only, never the password
     let accessToken = jwt.sign({
-      data: password
-    }, 'access', { expiresIn: 60 * 60 });
+      username
+    }, process.env.JWT_SECRET || 'access', { expiresIn: 60 * 60 });
 
     req.session.authorization = {
       accessToken,username
     }
     return res.status(200).send("User successfully logged in");
   } else {
-    return res.status(208).json({message: "Invalid Login. Check username and password"});
+    return res.status(401).json({message: "Invalid Login. Check username and password"});
   }
 });
 

@@ -9,7 +9,10 @@ const app = express();
 app.use(express.json());
 
 // Set up session management for the /customer routes
-app.use("/customer", session({ secret: "fingerprint_customer", resave: true, saveUninitialized: true }));
+// Secrets come from the environment; the defaults are for local development only
+const SESSION_SECRET = process.env.SESSION_SECRET || "fingerprint_customer";
+const JWT_SECRET = process.env.JWT_SECRET || "access";
+app.use("/customer", session({ secret: SESSION_SECRET, resave: true, saveUninitialized: true }));
 
 // Set up authentication middleware for all routes starting with /customer/auth/
 app.use("/customer/auth/*", function auth(req, res, next) {
@@ -19,7 +22,7 @@ app.use("/customer/auth/*", function auth(req, res, next) {
         let token = req.session.authorization['accessToken'];
         
         // Verify the JWT token
-        jwt.verify(token, "access", (err, user) => {
+        jwt.verify(token, JWT_SECRET, (err, user) => {
             if (!err) {
                 // If the token is valid, attach the user's details to the request object
                 req.user = user;
@@ -36,7 +39,7 @@ app.use("/customer/auth/*", function auth(req, res, next) {
     }
 });
 
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
 // Define the routes for authenticated users
 app.use("/customer", customer_routes);
